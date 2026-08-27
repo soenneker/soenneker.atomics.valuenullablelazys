@@ -2,7 +2,7 @@
 
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <Platforms>AnyCPU</Platforms>
         <NoWarn>$(NoWarn);1591</NoWarn>
@@ -43,6 +43,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Atomics.ValueLocks" Version="4.0.2" />
+        <PackageReference Include="Soenneker.Atomics.ValueLocks" Version="4.0.3" />
     </ItemGroup>
 </Project>
