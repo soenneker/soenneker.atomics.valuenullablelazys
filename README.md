@@ -12,6 +12,32 @@ Provides inline lazy storage that distinguishes an uninitialized value from a su
 dotnet add package Soenneker.Atomics.ValueNullableLazys
 ```
 
+## Usage
+
+Use this variant when `null` is a valid, cacheable factory result:
+
+```csharp
+using Soenneker.Atomics.ValueLocks;
+using Soenneker.Atomics.ValueNullableLazys;
+
+public sealed class UserLookup
+{
+    private ValueAtomicLock _sync;
+    private ValueNullableLazy<User> _user;
+
+    public User? Get(string id) => _user.GetOrCreate(
+        ref _sync,
+        id,
+        static userId => FindUser(userId));
+}
+```
+
+After the factory returns—even when it returns `null`—`IsValueCreated` is true and later calls reuse that result. `TryGetValue` distinguishes the states: a `false` return means uninitialized; a `true` return with a null output means initialized-to-null.
+
+`GetOrCreate` runs one factory under the supplied lock and retries after exceptions. `GetOrCreatePublicationOnly` may run duplicate factories during a race, while `GetOrCreateUnsafe` requires external synchronization.
+
+Keep both mutable structs in fields. Copies have independent lazy state or lock domains. Publication-only factories should be side-effect free, and losing non-null candidates are not disposed automatically.
+
 ## What you get
 
 - `ValueNullableLazy<T>` — Provides inline lazy storage that distinguishes an uninitialized value from a successfully initialized `null` result.
