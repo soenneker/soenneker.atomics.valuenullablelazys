@@ -39,6 +39,8 @@ public struct ValueNullableLazy<T> where T : class
     /// Attempts to read the initialized value without invoking a factory. A true return value with a null output means
     /// initialization completed with null.
     /// </summary>
+    /// <param name="value">Replacement value to store atomically.</param>
+    /// <returns>true if the requested update was applied; otherwise, false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetValue(out T? value)
     {
@@ -56,6 +58,9 @@ public struct ValueNullableLazy<T> where T : class
     /// <summary>
     /// Gets the initialized value or invokes <paramref name="factory"/> exactly once using execution-and-publication semantics.
     /// </summary>
+    /// <param name="sync">Synchronization object guarding one-time initialization.</param>
+    /// <param name="factory">Factory used to create a value when one is needed.</param>
+    /// <returns>The requested value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T? GetOrCreate(ref ValueAtomicLock sync, Func<T?> factory)
     {
@@ -67,6 +72,11 @@ public struct ValueNullableLazy<T> where T : class
     /// Gets the initialized value or invokes <paramref name="factory"/> exactly once using execution-and-publication semantics.
     /// Supplying state allows callers to use a static factory and avoid a closure allocation.
     /// </summary>
+    /// <typeparam name="TState">Type of state passed to the callback.</typeparam>
+    /// <param name="sync">Synchronization object guarding one-time initialization.</param>
+    /// <param name="state">State value used by the variant.</param>
+    /// <param name="factory">Factory used to create a value when one is needed.</param>
+    /// <returns>The requested value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T? GetOrCreate<TState>(ref ValueAtomicLock sync, TState state, Func<TState, T?> factory)
     {
@@ -82,6 +92,8 @@ public struct ValueNullableLazy<T> where T : class
     /// Gets or creates the value without locking. This method is only safe when the caller provides external synchronization
     /// or guarantees single-threaded access.
     /// </summary>
+    /// <param name="factory">Factory used to create a value when one is needed.</param>
+    /// <returns>The requested value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T? GetOrCreateUnsafe(Func<T?> factory)
     {
@@ -92,6 +104,10 @@ public struct ValueNullableLazy<T> where T : class
     /// <summary>
     /// Gets or creates the value without locking. Supplying state allows callers to use a static factory and avoid a closure allocation.
     /// </summary>
+    /// <typeparam name="TState">Type of state passed to the callback.</typeparam>
+    /// <param name="state">State value used by the variant.</param>
+    /// <param name="factory">Factory used to create a value when one is needed.</param>
+    /// <returns>The requested value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T? GetOrCreateUnsafe<TState>(TState state, Func<TState, T?> factory)
     {
@@ -109,6 +125,8 @@ public struct ValueNullableLazy<T> where T : class
     /// Gets the initialized value or atomically publishes one factory result. During a race the factory may run more than once,
     /// but every caller observes the single published result.
     /// </summary>
+    /// <param name="factory">Factory used to create a value when one is needed.</param>
+    /// <returns>The requested value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T? GetOrCreatePublicationOnly(Func<T?> factory)
     {
@@ -120,6 +138,10 @@ public struct ValueNullableLazy<T> where T : class
     /// Gets the initialized value or atomically publishes one factory result. Supplying state allows callers to use a static
     /// factory and avoid a closure allocation.
     /// </summary>
+    /// <typeparam name="TState">Type of state passed to the callback.</typeparam>
+    /// <param name="state">State value used by the variant.</param>
+    /// <param name="factory">Factory used to create a value when one is needed.</param>
+    /// <returns>The requested value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T? GetOrCreatePublicationOnly<TState>(TState state, Func<TState, T?> factory)
     {
