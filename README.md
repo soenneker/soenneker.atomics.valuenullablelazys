@@ -2,35 +2,33 @@
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.atomics.valuenullablelazys/publish-package.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.atomics.valuenullablelazys/actions/workflows/publish-package.yml)
 [![](https://img.shields.io/nuget/dt/soenneker.atomics.valuenullablelazys.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.atomics.valuenullablelazys/)
 
-# ![](https://user-images.githubusercontent.com/4441470/224455560-91ed3ee7-f510-4041-a8d2-3fc093025112.png) Soenneker.Atomics.ValueNullableLazys
-### Allocation-conscious lazy initialization that correctly caches null values.
+# Soenneker.Atomics.ValueNullableLazys
 
-## Installation
+Provides inline lazy storage that distinguishes an uninitialized value from a successfully initialized `null` result.
 
-```
+## Install
+
+```bash
 dotnet add package Soenneker.Atomics.ValueNullableLazys
 ```
 
-## Usage
+## What you get
 
-```csharp
-using Soenneker.Atomics.ValueLocks;
-using Soenneker.Atomics.ValueNullableLazys;
+- `ValueNullableLazy<T>` — Provides inline lazy storage that distinguishes an uninitialized value from a successfully initialized `null` result.
 
-public sealed class Resolver
-{
-    private ValueNullableLazy<Result> _result;
-    private ValueAtomicLock _initializationLock;
+## API at a glance
 
-    public Result? Resolve() =>
-        _result.GetOrCreate(ref _initializationLock, this,
-            static resolver => resolver.TryResolve());
-}
-```
+| API | What it does | Result / important behavior |
+| --- | --- | --- |
+| `ValueNullableLazy<T>.IsValueCreated` | Gets a value indicating whether initialization has completed successfully, including when the result was null. | Gets a value indicating whether initialization has completed successfully, including when the result was null. |
+| `ValueNullableLazy<T>.TryGetValue(value)` | Attempts to read the initialized value without invoking a factory. A true return value with a null output means initialization completed with null. | true if the requested update was applied; otherwise, false. |
+| `ValueNullableLazy<T>.GetOrCreate(sync, factory)` | Gets the initialized value or invokes `factory` exactly once using execution-and-publication semantics. | The requested value. |
+| `ValueNullableLazy<T>.GetOrCreate(sync, state, factory)` | Gets the initialized value or invokes `factory` exactly once using execution-and-publication semantics. Supplying state allows callers to use a static factory and avoid a closure allocation. | The requested value. |
+| `ValueNullableLazy<T>.GetOrCreateUnsafe(factory)` | Gets or creates the value without locking. This method is only safe when the caller provides external synchronization or guarantees single-threaded access. | The requested value. |
+| `ValueNullableLazy<T>.GetOrCreateUnsafe(state, factory)` | Gets or creates the value without locking. Supplying state allows callers to use a static factory and avoid a closure allocation. | The requested value. |
+| `ValueNullableLazy<T>.GetOrCreatePublicationOnly(factory)` | Gets the initialized value or atomically publishes one factory result. During a race the factory may run more than once, but every caller observes the single published result. | The requested value. |
+| `ValueNullableLazy<T>.GetOrCreatePublicationOnly(state, factory)` | Gets the initialized value or atomically publishes one factory result. Supplying state allows callers to use a static factory and avoid a closure allocation. | The requested value. |
 
-`ValueNullableLazy<T>` occupies one reference-sized field and uses a private sentinel to distinguish “not initialized” from “initialized with null.” Several lazy fields on an owner can share one `ValueAtomicLock`.
+## Important behavior
 
-- `GetOrCreate` provides execution-and-publication semantics.
-- `GetOrCreatePublicationOnly` may run the factory concurrently but atomically publishes one result.
-- `GetOrCreateUnsafe` performs no synchronization.
-- `TryGetValue` returns `true` after initialization even when the cached value is `null`.
+- `ValueNullableLazy<T>`: The default value is ready to use and occupies one reference-sized field. A `ValueAtomicLock` can be shared by several lazy fields on the same owner, avoiding a separate synchronization object for every value. This is a mutable `struct` intended for use as a private field. Avoid copying it because each copy has independent initialization state. Exceptions thrown by a factory are not cached, and a later call may retry initialization.
