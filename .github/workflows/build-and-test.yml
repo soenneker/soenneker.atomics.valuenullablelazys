@@ -40,5 +40,8 @@ jobs:
       - name: Test
         run: dotnet test --project test/Soenneker.Atomics.ValueNullableLazys.Tests/Soenneker.Atomics.ValueNullableLazys.Tests.csproj --configuration Release --no-build --no-restore --verbosity minimal
 
+      - name: Build library
+        run: dotnet build src/Soenneker.Atomics.ValueNullableLazys/Soenneker.Atomics.ValueNullableLazys.csproj --configuration Release --no-restore --verbosity minimal
+
       - name: Pack
         run: dotnet pack src/Soenneker.Atomics.ValueNullableLazys/Soenneker.Atomics.ValueNullableLazys.csproj --configuration Release --no-build --no-restore --output . --verbosity minimal
