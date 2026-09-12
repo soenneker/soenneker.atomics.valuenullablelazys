@@ -65,6 +65,10 @@ public struct ValueNullableLazy<T> where T : class
     public T? GetOrCreate(ref ValueAtomicLock sync, Func<T?> factory)
     {
         ArgumentNullException.ThrowIfNull(factory);
+        object? stored = Volatile.Read(ref _value);
+        if (stored is not null)
+            return Unwrap(stored);
+
         return GetOrCreate(ref sync, factory, static valueFactory => valueFactory());
     }
 
@@ -98,6 +102,10 @@ public struct ValueNullableLazy<T> where T : class
     public T? GetOrCreateUnsafe(Func<T?> factory)
     {
         ArgumentNullException.ThrowIfNull(factory);
+        object? stored = _value;
+        if (stored is not null)
+            return Unwrap(stored);
+
         return GetOrCreateUnsafe(factory, static valueFactory => valueFactory());
     }
 
@@ -131,6 +139,10 @@ public struct ValueNullableLazy<T> where T : class
     public T? GetOrCreatePublicationOnly(Func<T?> factory)
     {
         ArgumentNullException.ThrowIfNull(factory);
+        object? stored = Volatile.Read(ref _value);
+        if (stored is not null)
+            return Unwrap(stored);
+
         return GetOrCreatePublicationOnly(factory, static valueFactory => valueFactory());
     }
 
@@ -180,5 +192,6 @@ public struct ValueNullableLazy<T> where T : class
     private static object Wrap(T? value) => value ?? ValueNullableLazySentinel.Null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static T? Unwrap(object value) => ReferenceEquals(value, ValueNullableLazySentinel.Null) ? null : (T)value;
+    // Only T references and the checked null sentinel are ever published to _value.
+    private static T? Unwrap(object value) => ReferenceEquals(value, ValueNullableLazySentinel.Null) ? null : Unsafe.As<T>(value);
 }
