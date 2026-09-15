@@ -69,7 +69,7 @@ public struct ValueNullableLazy<T> where T : class
         if (stored is not null)
             return Unwrap(stored);
 
-        return GetOrCreate(ref sync, factory, static valueFactory => valueFactory());
+        return Unwrap(Initialize(ref sync, factory));
     }
 
     /// <summary>
@@ -106,7 +106,9 @@ public struct ValueNullableLazy<T> where T : class
         if (stored is not null)
             return Unwrap(stored);
 
-        return GetOrCreateUnsafe(factory, static valueFactory => valueFactory());
+        stored = Wrap(factory());
+        _value = stored;
+        return Unwrap(stored);
     }
 
     /// <summary>
@@ -143,7 +145,9 @@ public struct ValueNullableLazy<T> where T : class
         if (stored is not null)
             return Unwrap(stored);
 
-        return GetOrCreatePublicationOnly(factory, static valueFactory => valueFactory());
+        object created = Wrap(factory());
+        stored = Interlocked.CompareExchange(ref _value, created, null) ?? created;
+        return Unwrap(stored);
     }
 
     /// <summary>
@@ -164,6 +168,21 @@ public struct ValueNullableLazy<T> where T : class
         object created = Wrap(Create(state, factory));
         stored = Interlocked.CompareExchange(ref _value, created, null) ?? created;
         return Unwrap(stored);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private object Initialize(ref ValueAtomicLock sync, Func<T?> factory)
+    {
+        lock (sync.Get())
+        {
+            object? stored = _value;
+            if (stored is not null)
+                return stored;
+
+            stored = Wrap(factory());
+            Volatile.Write(ref _value, stored);
+            return stored;
+        }
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

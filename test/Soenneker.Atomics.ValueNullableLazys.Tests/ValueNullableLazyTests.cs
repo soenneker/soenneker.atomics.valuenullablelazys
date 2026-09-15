@@ -112,6 +112,28 @@ public sealed class ValueNullableLazyTests : UnitTest
         holder.Sync.IsValueCreated.Should().BeFalse();
     }
 
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public void Direct_factory_should_publish_null_once_under_contention(bool publicationOnly)
+    {
+        var holder = new Holder();
+        var values = new Payload?[128];
+        Func<Payload?> factory = () =>
+        {
+            Interlocked.Increment(ref holder.FactoryCalls);
+            return null;
+        };
+        Parallel.For(0, values.Length, i => values[i] = publicationOnly
+            ? holder.Value.GetOrCreatePublicationOnly(factory)
+            : holder.Value.GetOrCreate(ref holder.Sync, factory));
+
+        values.All(value => value is null).Should().BeTrue();
+        holder.Value.IsValueCreated.Should().BeTrue();
+        if (!publicationOnly)
+            holder.FactoryCalls.Should().Be(1);
+    }
+
     private sealed class Holder
     {
         public ValueNullableLazy<Payload> Value;
