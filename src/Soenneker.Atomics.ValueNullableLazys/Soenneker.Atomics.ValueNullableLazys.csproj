@@ -44,6 +44,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Atomics.ValueLocks" Version="4.0.15" />
+        <PackageReference Include="Soenneker.Atomics.ValueLocks" Version="4.0.16" />
     </ItemGroup>
 </Project>
